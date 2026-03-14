@@ -60,7 +60,7 @@ async def scroll_page(page, max_scrolls=50):
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await asyncio.sleep(2)
         
-        products_after = await page.locator('.product-card, .product-item, [data-product-id]').count()
+        products_after = await page.locator('.product-card, .product-item, [data-product-id], .grid-view-item, .card').count()
         
         if products_before == products_after:
             no_change_count += 1
@@ -144,22 +144,36 @@ async def scrape_product(url: str, category: str, is_sale: bool = False) -> Opti
             await page.goto(url, wait_until="networkidle", timeout=30000)
             await asyncio.sleep(2)
             
-            title = await page.locator('h1, .product-title, [itemprop="name"]').first.text_content(timeout=5000) or ""
-            title = title.strip()
+            title = ""
+            try:
+                title = await page.locator('h1.product-title, h1.title, h1').first.text_content(timeout=5000) or ""
+                title = title.strip()
+            except:
+                pass
+            
+            if not title:
+                try:
+                    title = await page.title() or ""
+                except:
+                    pass
             
             description = ""
             try:
-                desc_elem = page.locator('.product-description, .description, [itemprop="description"]').first
+                desc_elem = page.locator('.product-description, .description, [itemprop="description"], .rte').first
                 description = await desc_elem.text_content(timeout=3000) or ""
             except:
                 pass
             
             price_text = ""
             try:
-                price_elem = page.locator('.price, .product-price, [itemprop="price"], .sale-price, .original-price').first
+                price_elem = page.locator('.price-item--regular, .product-price, .price .money, [itemprop="price"], .price__sale .price-item--regular').first
                 price_text = await price_elem.text_content(timeout=3000) or ""
             except:
-                pass
+                try:
+                    price_elem = page.locator('.price, .product-price').first
+                    price_text = await price_elem.text_content(timeout=3000) or ""
+                except:
+                    pass
             
             sale_text = ""
             if is_sale:
@@ -167,17 +181,28 @@ async def scrape_product(url: str, category: str, is_sale: bool = False) -> Opti
             
             image_url = ""
             try:
-                img = page.locator('.product-image img, .featured-image img, [itemprop="image"]').first
+                img = page.locator('.product-featured-image, .featured-image img, [itemprop="image"], .product__media img').first
                 image_url = await img.get_attribute('src') or await img.get_attribute('data-src') or ""
             except:
-                pass
+                try:
+                    img = page.locator('.product-image img').first
+                    image_url = await img.get_attribute('src') or await img.get_attribute('data-src') or ""
+                except:
+                    pass
+            
+            if not image_url:
+                try:
+                    img = page.locator('img[alt*="product"]').first
+                    image_url = await img.get_attribute('src') or ""
+                except:
+                    pass
             
             additional_images_list = []
             try:
-                thumbs = await page.locator('.thumbnails img, .product-thumbnails img, .gallery img').all()
+                thumbs = await page.locator('.product-thumbnail img, .thumbnails img, .product__media--thumbnail img').all()
                 for thumb in thumbs[:5]:
                     src = await thumb.get_attribute('src') or await thumb.get_attribute('data-src')
-                    if src and src != image_url and src not in additional_images_list:
+                    if src and src != image_url and 'placeholder' not in src.lower() and src not in additional_images_list:
                         additional_images_list.append(src)
             except:
                 pass
@@ -221,7 +246,7 @@ async def scrape_product(url: str, category: str, is_sale: bool = False) -> Opti
                 size=None,
                 second_hand=False,
                 image_embedding=None,
-                country="US",
+                country=None,
                 compressed_image_url=None,
                 tags=None,
                 other=None,

@@ -35,8 +35,12 @@ class EmbeddingGenerator:
             
             with torch.no_grad():
                 outputs = self.model.get_image_features(**inputs)
+                if hasattr(outputs, 'pooler_output'):
+                    embedding = outputs.pooler_output
+                else:
+                    embedding = outputs.last_hidden_state[:, 0]
             
-            embedding = outputs.cpu().numpy()[0].tolist()
+            embedding = embedding.cpu().numpy()[0].tolist()
             return embedding
             
         except Exception as e:
@@ -51,8 +55,12 @@ class EmbeddingGenerator:
             
             with torch.no_grad():
                 outputs = self.model.get_text_features(**inputs)
+                if hasattr(outputs, 'pooler_output'):
+                    embedding = outputs.pooler_output
+                else:
+                    embedding = outputs.last_hidden_state[:, 0]
             
-            embedding = outputs.cpu().numpy()[0].tolist()
+            embedding = embedding.cpu().numpy()[0].tolist()
             return embedding
             
         except Exception as e:
