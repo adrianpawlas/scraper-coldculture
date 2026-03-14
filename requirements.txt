@@ -7,3 +7,5 @@ transformers
 Pillow
 numpy
 aiohttp
+sentencepiece>=0.1.99
+protobuf>=4.21.0
