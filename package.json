@@ -1,0 +1,15 @@
+{
+  "name": "coldculture-scraper",
+  "version": "1.0.0",
+  "description": "Scraper for Cold Culture fashion store",
+  "main": "src/main.py",
+  "scripts": {
+    "scrape": "python -m src.main"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "python-dotenv": "^1.0.0",
+    "httpx": "^0.25.0"
+  },
+  "devDependencies": {}
+}
